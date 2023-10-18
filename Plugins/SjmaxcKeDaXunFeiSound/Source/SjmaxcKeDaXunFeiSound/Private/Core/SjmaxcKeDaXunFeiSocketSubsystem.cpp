@@ -18,8 +18,8 @@ bool USjmaxcKeDaXunFeiSocketSubsystem::ShouldCreateSubsystem(UObject* Outer) con
 
 void USjmaxcKeDaXunFeiSocketSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-	Appid = USjmaxcKeDaXunFeiSoundSettings::GetDataBaseSettings()->Appid;
-	APIKey = USjmaxcKeDaXunFeiSoundSettings::GetDataBaseSettings()->APIKey;
+	Appid = USjmaxcKeDaXunFeiSoundSettings::GetDataBaseSettings()->AppID;
+	APIKey = USjmaxcKeDaXunFeiSoundSettings::GetDataBaseSettings()->APIKeySTT;
 	
 }
 

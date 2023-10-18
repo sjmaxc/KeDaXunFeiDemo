@@ -40,9 +40,7 @@ TStatId USjmaxcKeDaXunFeiSocketSubsystem::GetStatId() const
 	RETURN_QUICK_DECLARE_CYCLE_STAT(USjmaxcKeDaXunFeiSocketSubsystem, STATGROUP_Tickables); 
 }
 
-void USjmaxcKeDaXunFeiSocketSubsystem::SjmaxcBeginSpeachToText(
-	FSjmaxcBeginSpeachToTextDelegate InSjmaxcBeginSpeachToTextDelegate,
-	FSjmaxcSpeachToTextDelegate InSjmaxcSpeachToTextDelegat)
+void USjmaxcKeDaXunFeiSocketSubsystem::SjmaxcBeginSpeachToText(FSjmaxcBeginSpeachToTextDelegate InSjmaxcBeginSpeachToTextDelegate,FSjmaxcSpeachToTextDelegate InSjmaxcSpeachToTextDelegate)
 {
 	if (bSpeechToText)
 	{
@@ -50,7 +48,7 @@ void USjmaxcKeDaXunFeiSocketSubsystem::SjmaxcBeginSpeachToText(
 	}
 	bSpeechToText = true;
 	SjmaxcBeginSpeachToTextDelegate = InSjmaxcBeginSpeachToTextDelegate;
-	SjmaxcSpeachToTextDelegate = InSjmaxcSpeachToTextDelegat;
+	SjmaxcSpeachToTextDelegate = InSjmaxcSpeachToTextDelegate;
 	
 	CreateSocket();
 }
@@ -124,7 +122,7 @@ void USjmaxcKeDaXunFeiSocketSubsystem::CreateSocket()
 	ServerURL += TEXT("&");
 	ServerURL += TEXT("pd=edu");	// 拼接类型
 	
-	// ServerURL += TEXT("&lang=cn&transType=normal&transStrategy=2&targetLang=en");	// 拼接后缀
+	ServerURL += TEXT("&lang=cn&transType=normal&transStrategy=2&targetLang=en");	// 拼接后缀
 	
 	Socket = FWebSocketsModule::Get().CreateWebSocket(ServerURL, ServerProtocol);
 	Socket->OnConnected().AddUObject(this, &USjmaxcKeDaXunFeiSocketSubsystem::OnConnected);

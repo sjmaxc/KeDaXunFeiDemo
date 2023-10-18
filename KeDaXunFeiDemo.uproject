@@ -21,6 +21,14 @@
 		{
 			"Name": "SoundUtilities",
 			"Enabled": true
+		},
+		{
+			"Name": "OpenAIAPI",
+			"Enabled": true
+		},
+		{
+			"Name": "TextToSpeech",
+			"Enabled": true
 		}
 	]
 }

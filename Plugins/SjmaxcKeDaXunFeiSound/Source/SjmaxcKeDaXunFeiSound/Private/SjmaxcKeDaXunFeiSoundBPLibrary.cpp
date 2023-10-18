@@ -11,7 +11,7 @@ USjmaxcKeDaXunFeiSoundBPLibrary::USjmaxcKeDaXunFeiSoundBPLibrary(const FObjectIn
 
 }
 
-void USjmaxcKeDaXunFeiSoundBPLibrary::SjmaxcBeginSpeachToText(const UObject* WorldContextObject, FSjmaxcBeginSpeachToTextDelegate SjmaxcBeginSpeachToTextDelegate, FSjmaxcSpeachToTextDelegate SjmaxcSpeachToTextDelegat)
+void USjmaxcKeDaXunFeiSoundBPLibrary::SjmaxcBeginSpeachToText(const UObject* WorldContextObject, FSjmaxcBeginSpeachToTextDelegate SjmaxcBeginSpeachToTextDelegate, FSjmaxcSpeachToTextDelegate SjmaxcSpeachToTextDelegate)
 {
 	if (!WorldContextObject)
 	{
@@ -20,7 +20,7 @@ void USjmaxcKeDaXunFeiSoundBPLibrary::SjmaxcBeginSpeachToText(const UObject* Wor
 	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(WorldContextObject);
 	USjmaxcKeDaXunFeiSocketSubsystem* SocketSystem = GameInstance->GetSubsystem<USjmaxcKeDaXunFeiSocketSubsystem>();
 
-	SocketSystem->SjmaxcBeginSpeachToText(SjmaxcBeginSpeachToTextDelegate, SjmaxcSpeachToTextDelegat);
+	SocketSystem->SjmaxcBeginSpeachToText(SjmaxcBeginSpeachToTextDelegate, SjmaxcSpeachToTextDelegate);
 
 }
 

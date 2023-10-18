@@ -18,7 +18,7 @@ class USjmaxcKeDaXunFeiSoundBPLibrary : public UBlueprintFunctionLibrary
 	GENERATED_UCLASS_BODY()
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "BeginSpeachToText", Keywords = "KeDaXunFei ", WorldContext = "WorldContextObject"), Category = "SjmaxcKeDaXunFeiSoundTesting")
-	static void SjmaxcBeginSpeachToText(const UObject* WorldContextObject, FSjmaxcBeginSpeachToTextDelegate SjmaxcBeginSpeachToTextDelegate, FSjmaxcSpeachToTextDelegate SjmaxcSpeachToTextDelegat);
+	static void SjmaxcBeginSpeachToText(const UObject* WorldContextObject, FSjmaxcBeginSpeachToTextDelegate SjmaxcBeginSpeachToTextDelegate, FSjmaxcSpeachToTextDelegate SjmaxcSpeachToTextDelegate);
 
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "StopSpeachToText", Keywords = "KeDaXunFei ", WorldContext = "WorldContextObject"), Category = "SjmaxcKeDaXunFeiSoundTesting")

@@ -101,6 +101,40 @@ void USjmaxcTTSSubsystem::CloseSocket()
 void USjmaxcTTSSubsystem::OnConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(__FUNCTION__));
+
+	UE_LOG(LogTemp, Warning, TEXT("---------------------------------------------------------------------"));
+	FString MyText = TEXT("你好,小刚，我们成功实现了TTS文本转语音功能呢");
+
+	TArray<uint8> OutArray;
+	
+	// Convert FString to TCHAR array
+	const TCHAR* CharPtr = *MyText;
+	TArray<TCHAR> CharArray;
+	while (*CharPtr)
+	{
+		CharArray.Add(*CharPtr++);
+	}
+
+	// Convert TCHAR array to UTF-8 char array
+	FTCHARToUTF8 Converter(CharArray.GetData());
+	const auto ConvertedLength = Converter.Length();
+	OutArray.Reserve(ConvertedLength);
+	for (int32 i = 0; i < ConvertedLength; ++i)
+	{
+		OutArray.Add(static_cast<uint8>(Converter.Get()[i]));
+	}
+	
+	FString Base64MyText = FBase64::Encode(OutArray.GetData(), OutArray.Num());
+	FString APPID = USjmaxcKeDaXunFeiSoundSettings::GetDataBaseSettings()->AppID;
+	FString Json1 = TEXT("{\"common\": {\"app_id\": \"");
+	Json1 += APPID;
+	Json1 += TEXT("\"},\"business\" : {\"aue\": \"raw\",\"vcn\" : \"xiaoyan\",\"pitch\" : 50,\"speed\" : 50,\"tte\":\"UTF8\"},	\"data\": {\"status\": 2,\"text\" : ");
+	Json1 += TEXT("\"");
+	Json1 += Base64MyText;
+	Json1 += TEXT("\"");
+	Json1 += TEXT(" }} ");
+	
+	Socket->Send(Json1);
 }
 
 void USjmaxcTTSSubsystem::OnConnectionError(const FString& Error)
@@ -111,7 +145,7 @@ void USjmaxcTTSSubsystem::OnConnectionError(const FString& Error)
 void USjmaxcTTSSubsystem::OnClosed(int32 StatusCode, const FString& Reason, bool bWasClean)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s StatusCode:%d Reason:%s bWasClean:%d"),
-	*FString(__FUNCTION__), StatusCode, *Reason, bWasClean);
+		*FString(__FUNCTION__), StatusCode, *Reason, bWasClean);
 }
 
 void USjmaxcTTSSubsystem::OnMessage(const FString& Message)

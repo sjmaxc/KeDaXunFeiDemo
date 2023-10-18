@@ -4,6 +4,7 @@
 #include "Core/SjmaxcKeDaXunFeiSocketSubsystem.h"
 #include "WebSocketsModule.h"
 #include "Core/SjmaxcAudioCaptureSubsystem.h"
+#include "Type/SjmaxcKeDaXunFeiSoundSettings.h"
 
 bool USjmaxcKeDaXunFeiSocketSubsystem::bSending = false;
 TSharedPtr<IWebSocket> USjmaxcKeDaXunFeiSocketSubsystem::Socket = {};
@@ -17,7 +18,8 @@ bool USjmaxcKeDaXunFeiSocketSubsystem::ShouldCreateSubsystem(UObject* Outer) con
 
 void USjmaxcKeDaXunFeiSocketSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-
+	Appid = USjmaxcKeDaXunFeiSoundSettings::GetDataBaseSettings()->Appid;
+	APIKey = USjmaxcKeDaXunFeiSoundSettings::GetDataBaseSettings()->APIKey;
 	
 }
 

@@ -62,8 +62,8 @@ private:
 	FString ServerURL = TEXT("");
 	FString ServerProtocol = TEXT("");
 
-	FString Appid = TEXT("5b9b89db");
-	FString APIKey = TEXT("c416ae0121bafefce15eb43f14b3f03a");
+	FString Appid;
+	FString APIKey;
 	
 	static	bool bSending ;
 	bool bSpeechToText = false;

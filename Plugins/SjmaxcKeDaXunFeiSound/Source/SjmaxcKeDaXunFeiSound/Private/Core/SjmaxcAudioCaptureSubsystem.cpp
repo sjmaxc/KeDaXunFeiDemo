@@ -2,10 +2,18 @@
 
 
 #include "Core/SjmaxcAudioCaptureSubsystem.h"
+#include "Kismet/GameplayStatics.h"
+#include "Core/SjmaxcKeDaXunFeiSocketSubsystem.h"
 
 float* USjmaxcAudioCaptureSubsystem::SjmaxcAudio = nullptr;
 int32 USjmaxcAudioCaptureSubsystem::SjmaxcNumSamples = -1;
 TArray<float*>  USjmaxcAudioCaptureSubsystem::InAudios = {};
+float* USjmaxcAudioCaptureSubsystem::ToSendData = nullptr;
+
+int32 USjmaxcAudioCaptureSubsystem::IndexSend = 0;
+
+FCriticalSection USjmaxcAudioCaptureSubsystem::SjmaxcAudioCriticalSection;
+TArray<float> USjmaxcAudioCaptureSubsystem::AudioData = {};
 
 bool USjmaxcAudioCaptureSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
@@ -29,6 +37,8 @@ void USjmaxcAudioCaptureSubsystem::Initialize(FSubsystemCollectionBase& Collecti
 		}
 		InAudios.Empty();
 	}
+	FScopeLock Lock(&SjmaxcAudioCriticalSection);
+	AudioData.Empty();
 }
 
 void USjmaxcAudioCaptureSubsystem::Deinitialize()
@@ -61,8 +71,11 @@ void USjmaxcAudioCaptureSubsystem::StartCapturingAudio()
 		}
 		InAudios.Empty();
 	}
-	int32 test = SjmaxcAudioCapture->GetSampleRate();
-	UE_LOG(LogTemp, Display, TEXT("OnAudioCapture %d"), test);
+	FScopeLock Lock(&SjmaxcAudioCriticalSection);
+	if (AudioData.Num()>0)
+	{
+		AudioData.Empty();
+	}
 	SjmaxcAudioCapture->StartCapturingAudio();
 }
 
@@ -76,9 +89,17 @@ bool USjmaxcAudioCaptureSubsystem::IsCapturingAudio()
 	return SjmaxcAudioCapture->IsCapturingAudio();
 }
 
+bool USjmaxcAudioCaptureSubsystem::GetAudioCaptureDeviceInfo(FAudioCaptureDeviceInfo& OutInfo)
+{
+	bool bGet =	SjmaxcAudioCapture->GetAudioCaptureDeviceInfo(OutInfo);
+	UE_LOG(LogTemp, Warning, TEXT("DeviceName:[%s]---NumInputChannels:[%d]----SampleRate:[%d]"), *(OutInfo.DeviceName.ToString()), OutInfo.NumInputChannels, OutInfo.SampleRate);
+	return bGet;
+}
+
 void USjmaxcAudioCaptureSubsystem::OnAudioGenerate(const float* InAudio, int32 NumSamples)
 {
-	UE_LOG(LogTemp, Display, TEXT("OnAudioCapture %f-----%d"), *InAudio, NumSamples);
+	/*
+	 *UE_LOG(LogTemp, Display, TEXT("OnAudioCapture %f-----%d"), *InAudio, NumSamples);
 	
 	SjmaxcAudio = const_cast<float*>(InAudio);
 	SjmaxcNumSamples = NumSamples;
@@ -91,4 +112,46 @@ void USjmaxcAudioCaptureSubsystem::OnAudioGenerate(const float* InAudio, int32 N
 	}
 	
 	InAudios.Add(SjmaxcAudio);
+	*/
+
+	FScopeLock Lock(&SjmaxcAudioCriticalSection);
+	int32 LeftIndex = 0;
+	if (IndexSend == 0)
+	{
+		IndexSend++;
+		for (int32 SendIndex = 0; SendIndex<341; SendIndex++)
+		{
+			AudioData.Add(InAudio[LeftIndex]);
+			LeftIndex += 6;
+			
+			
+		}
+
+	}
+	else if (IndexSend ==1)
+	{
+
+		IndexSend++;
+		for (int32 SendIndex = 341; SendIndex < 682; SendIndex++)
+		{
+			AudioData.Add(InAudio[LeftIndex]);
+
+			LeftIndex += 6;
+		}
+
+
+	}
+	else if (IndexSend ==2)
+	{
+
+		IndexSend = 0;
+		for (int32 SendIndex = 682; SendIndex < 1024; SendIndex++)
+		{
+			AudioData.Add(InAudio[LeftIndex]);
+
+			LeftIndex += 6;
+		}
+		
+		//	USjmaxcKeDaXunFeiSocketSubsystem::SendVoiceData(ToSendData, NumSamples);
+	}
 }

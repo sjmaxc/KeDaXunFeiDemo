@@ -39,6 +39,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AudioCapture")
 	bool IsCapturingAudio();
 
+	UFUNCTION(BlueprintCallable, Category = "AudioCapture")
+	bool GetAudioCaptureDeviceInfo(FAudioCaptureDeviceInfo& OutInfo);
+
 	// TODO 垃圾代码等待优化
 	//一帧是1024个float
 	static	float* SjmaxcAudio;
@@ -49,6 +52,12 @@ protected:
 
 	static void OnAudioGenerate(const float* InAudio, int32 NumSamples);
 
+	static int32 IndexSend;
+	static float* ToSendData;
+
+public:
+	static	FCriticalSection SjmaxcAudioCriticalSection;
+	static	TArray<float> AudioData;
 
 protected:
 	UPROPERTY()

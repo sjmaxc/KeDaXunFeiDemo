@@ -4,6 +4,7 @@
 #include "Core/SjmaxcKeDaXunFeiSocketSubsystem.h"
 #include "WebSocketsModule.h"
 
+bool USjmaxcKeDaXunFeiSocketSubsystem::bSending = false;
 TSharedPtr<IWebSocket> USjmaxcKeDaXunFeiSocketSubsystem::Socket = {};
 
 bool USjmaxcKeDaXunFeiSocketSubsystem::ShouldCreateSubsystem(UObject* Outer) const
@@ -13,6 +14,8 @@ bool USjmaxcKeDaXunFeiSocketSubsystem::ShouldCreateSubsystem(UObject* Outer) con
 
 void USjmaxcKeDaXunFeiSocketSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
+	FConsumeSoundRunnable* Runnable1 = new FConsumeSoundRunnable(TEXT("Thread1"));
+	FRunnableThread* RunnableThread1 = FRunnableThread::Create(Runnable1, *Runnable1->MyThreadName);
 	
 }
 
@@ -83,14 +86,52 @@ void USjmaxcKeDaXunFeiSocketSubsystem::CreateSocket()
 	Socket->OnMessageSent().AddUObject(this, &USjmaxcKeDaXunFeiSocketSubsystem::OnMessageSent);
 	Socket->Connect();
 
+	bSending = true;
 }
 
 void USjmaxcKeDaXunFeiSocketSubsystem::CloseSocket()
 {
+	bSending = false;
 	if (Socket.IsValid()&& Socket->IsConnected())
 	{
 		Socket->Close();
 	}
+}
+
+void USjmaxcKeDaXunFeiSocketSubsystem::SendVoiceData(const float* InAudio, int32 NumSamples)
+{
+	if (Socket.IsValid()&& Socket->IsConnected()&& bSending)
+	{
+		//我们拿到的数据实际上2048个采样点 每个采样点都是float类型,4个字节,32位
+		//现在每64ms 发送1024个采样点信息,一个采样点是2个字节,16位.
+		//发送2048个字节
+		TArray<int16> ToChangeAuidoData;
+		TArray<uint8> BinaryDataToSend;
+		int32 i = 0;
+		for (; i < 1024;)
+		{	//-1.0~1.0
+			ToChangeAuidoData.Add((int16)FMath::Clamp<int32>(FMath::FloorToInt(32767.0f * InAudio[i]), -32768, 32767));
+
+			uint8 Bytes[2];
+			//取出数据的高位数据
+			Bytes[0] = (uint8)(ToChangeAuidoData[i] & 0xFF);
+			//取出数据的低位数据
+			Bytes[1] = (uint8)((ToChangeAuidoData[i] >> 8) & 0xFF);
+			
+			//大端存储把高位数据放到低字节
+			BinaryDataToSend.Add(Bytes[0]);
+			//大端存储把地位数据放到高字节
+			BinaryDataToSend.Add(Bytes[1]);
+
+			i++;
+		}
+		Socket->Send(BinaryDataToSend.GetData(), BinaryDataToSend.Num(),false);
+	}
+}
+
+void USjmaxcKeDaXunFeiSocketSubsystem::StopSendVoiceData()
+{
+	bSending = false;
 }
 
 void USjmaxcKeDaXunFeiSocketSubsystem::OnConnected()
@@ -111,7 +152,33 @@ void USjmaxcKeDaXunFeiSocketSubsystem::OnClosed(int32 StatusCode, const FString&
 
 void USjmaxcKeDaXunFeiSocketSubsystem::OnMessage(const FString& Message)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s Message:%s"), *FString(__FUNCTION__), *Message);
+	// UE_LOG(LogTemp, Warning, TEXT("%s Message:%s"), *FString(__FUNCTION__), *Message);
+	if (!Message.IsEmpty())
+	{
+		TSharedPtr<FJsonObject> ResultObj;
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Message);
+		FJsonSerializer::Deserialize(Reader, ResultObj);
+		FString ssss;
+		if (ResultObj->TryGetStringField("data", ssss))
+		{
+			if (!ssss.IsEmpty())
+			{
+				TSharedPtr<FJsonObject> DataObj;
+				TSharedRef<TJsonReader<>> Reader2 = TJsonReaderFactory<>::Create(ssss);
+				FJsonSerializer::Deserialize(Reader2, DataObj);
+
+				FString dst;
+				FString src;
+
+				bool bDest = DataObj->TryGetStringField(TEXT("dst"), dst);
+				bool bSrc = DataObj->TryGetStringField(TEXT("src"), src);
+				if (bDest && bSrc)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("dst :%s Message [src]:%s"), *dst, *src);
+				}
+			}
+		}
+	}
 }
 
 void USjmaxcKeDaXunFeiSocketSubsystem::OnMessageSent(const FString& MessageString)

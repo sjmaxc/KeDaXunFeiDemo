@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "IWebSocket.h"
+#include "Thread/ConsumeSoundRunnable.h"
 #include "SjmaxcKeDaXunFeiSocketSubsystem.generated.h"
 
 /**
@@ -31,6 +32,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CloseSocket();
 
+public:
+
+	static void SendVoiceData(const float* InAudio, int32 NumSamples);
+
+	UFUNCTION(BlueprintCallable)
+	void StopSendVoiceData();
+	
 protected:
 
 	void OnConnected();
@@ -48,5 +56,5 @@ private:
 	FString Appid = TEXT("5b9b89db");
 	FString APIKey = TEXT("c416ae0121bafefce15eb43f14b3f03a");
 	
-	
+	static	bool bSending ;
 };

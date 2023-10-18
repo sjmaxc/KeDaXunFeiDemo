@@ -34,6 +34,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CloseSocket();
 
+public:
+	static TArray<float> FinalUEData;
+	
 protected:
 
 	void OnConnected();

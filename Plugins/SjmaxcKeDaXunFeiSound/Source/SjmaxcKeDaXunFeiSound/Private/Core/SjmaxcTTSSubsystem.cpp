@@ -7,6 +7,8 @@
 #include "Type/SjmaxcKeDaXunFeiSoundSettings.h"
 #include "Algorithm/hmacsha256.h" 
 
+TArray<float>  USjmaxcTTSSubsystem::FinalUEData ={};
+
 bool USjmaxcTTSSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
 	return true;
@@ -150,7 +152,59 @@ void USjmaxcTTSSubsystem::OnClosed(int32 StatusCode, const FString& Reason, bool
 
 void USjmaxcTTSSubsystem::OnMessage(const FString& Message)
 {
+	UE_LOG(LogTemp, Warning, TEXT("---------------------------------------------------------------------"));
 	UE_LOG(LogTemp, Warning, TEXT("%s Message:%s"), *FString(__FUNCTION__), *Message);
+	UE_LOG(LogTemp, Warning, TEXT("---------------------------------------------------------------------"));
+
+	//string转json
+	TSharedPtr<FJsonObject> MessageObject = MakeShareable(new FJsonObject);
+	TSharedRef< TJsonReader<> > Reader = TJsonReaderFactory<>::Create(Message);
+	FJsonSerializer::Deserialize(Reader, MessageObject);
+	
+	int32 Code = MessageObject->GetIntegerField(TEXT("code"));
+
+	if (Code == 0)
+	{
+		TSharedPtr<FJsonObject> DataObject = MessageObject->GetObjectField("data");
+
+		FString Audio = DataObject->GetStringField(TEXT("audio"));
+		int32	Status = DataObject->GetIntegerField(TEXT("status"));
+		FString Ced = DataObject->GetStringField(TEXT("ced"));
+
+		//音频的二进制数据
+		TArray<uint8> AudioData;
+
+		//接收到加密后的音频字符串 
+		//解密，然后存到二进制数据组里面
+		FBase64::Decode(Audio, AudioData);
+
+		//PCM数据 16位 单通道 16k
+		TArray<int16> PCMData;
+		
+		for (int index = 0; index < AudioData.Num(); index += 2)
+		{
+			int16 a;
+			int16 b;
+			int16 PCMint16;
+			//0100 0010
+			a = AudioData[index + 1];
+			//0010 0100 
+			b = AudioData[index];
+			//小端存储
+
+			// 0100 0010 0010 0100
+			PCMint16 = (a << 8) | b; //a放在高8位，b放在低8位
+			PCMData.Add(PCMint16);
+		}
+
+		TArray<float> UEData;
+
+		for (auto& Tmp : PCMData)
+		{
+			UEData.Add(FMath::Clamp(Tmp / 32767.f, -1.0, 1.0));
+		}
+		FinalUEData.Append(UEData);
+	}
 }
 
 void USjmaxcTTSSubsystem::OnMessageSent(const FString& MessageString)

@@ -100,17 +100,22 @@ void USjmaxcTTSSubsystem::CloseSocket()
 {
 }
 
+void USjmaxcTTSSubsystem::SetTTSText(FString Text)
+{
+	TTSText = Text;
+}
+
 void USjmaxcTTSSubsystem::OnConnected()
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(__FUNCTION__));
 
 	UE_LOG(LogTemp, Warning, TEXT("---------------------------------------------------------------------"));
-	FString MyText = TEXT("你好,小刚，我们成功实现了TTS文本转语音功能呢");
+	FString MyText = TEXT("Wow,我们成功实现了TTS文本转语音功能呢");
 
 	TArray<uint8> OutArray;
 	
 	// Convert FString to TCHAR array
-	const TCHAR* CharPtr = *MyText;
+	const TCHAR* CharPtr = *TTSText;
 	TArray<TCHAR> CharArray;
 	while (*CharPtr)
 	{

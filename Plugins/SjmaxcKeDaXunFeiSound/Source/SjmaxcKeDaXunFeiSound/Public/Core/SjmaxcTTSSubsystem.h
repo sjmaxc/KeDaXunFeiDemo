@@ -34,6 +34,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CloseSocket();
 
+	UFUNCTION(BlueprintCallable)
+	void SetTTSText(FString Text);
 public:
 	static TArray<float> FinalUEData;
 	
@@ -50,6 +52,7 @@ private:
 	TSharedPtr<IWebSocket> Socket;
 	FString ServerURL = TEXT("");
 	FString ServerProtocol = TEXT("");
+	FString TTSText = TEXT("");
 
 protected:
 	// 令牌加密函数

@@ -47,5 +47,9 @@ private:
 	TSharedPtr<IWebSocket> Socket;
 	FString ServerURL = TEXT("");
 	FString ServerProtocol = TEXT("");
+
+protected:
+	// 令牌加密函数
+	FString HMACSHA256(FString APPSecreet, FString Data);
 	
 };

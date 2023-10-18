@@ -6,6 +6,8 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "IWebSocket.h"
 #include "Thread/ConsumeSoundRunnable.h"
+#include "SjmaxcKeDaXunFeiSoundBPLibrary.h"
+#include "Core/SjmaxcAudioCaptureSubsystem.h"
 #include "SjmaxcKeDaXunFeiSocketSubsystem.generated.h"
 
 /**
@@ -27,6 +29,12 @@ public:
 	virtual TStatId GetStatId() const override;
 
 public:
+
+
+	void SjmaxcBeginSpeachToText(FSjmaxcBeginSpeachToTextDelegate InSjmaxcBeginSpeachToTextDelegate, FSjmaxcSpeachToTextDelegate InSjmaxcSpeachToTextDelegat);
+	void SjmaxcStopSpeachToText();
+	
+public:
 	UFUNCTION(BlueprintCallable)
 	void CreateSocket();
 	UFUNCTION(BlueprintCallable)
@@ -35,7 +43,8 @@ public:
 public:
 
 	static void SendVoiceData(const float* InAudio, int32 NumSamples);
-
+	static void EndSendVoiceData();
+	
 	UFUNCTION(BlueprintCallable)
 	void StopSendVoiceData();
 	
@@ -57,4 +66,10 @@ private:
 	FString APIKey = TEXT("c416ae0121bafefce15eb43f14b3f03a");
 	
 	static	bool bSending ;
+	bool bSpeechToText = false;
+	FSjmaxcBeginSpeachToTextDelegate SjmaxcBeginSpeachToTextDelegate;
+	FSjmaxcSpeachToTextDelegate SjmaxcSpeachToTextDelegate;
+	TSharedPtr< FConsumeSoundRunnable> VoiceRunnable;
+public:
+	static USjmaxcAudioCaptureSubsystem* SjmaxcAudioCaptureSubsystem;
 };

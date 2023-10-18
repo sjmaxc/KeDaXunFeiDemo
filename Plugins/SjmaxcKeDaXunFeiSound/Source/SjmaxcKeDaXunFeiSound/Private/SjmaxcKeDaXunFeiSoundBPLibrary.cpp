@@ -2,6 +2,8 @@
 
 #include "SjmaxcKeDaXunFeiSoundBPLibrary.h"
 #include "SjmaxcKeDaXunFeiSound.h"
+#include "Core/SjmaxcKeDaXunFeiSocketSubsystem.h"
+#include "Kismet/GameplayStatics.h"
 
 USjmaxcKeDaXunFeiSoundBPLibrary::USjmaxcKeDaXunFeiSoundBPLibrary(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -9,8 +11,27 @@ USjmaxcKeDaXunFeiSoundBPLibrary::USjmaxcKeDaXunFeiSoundBPLibrary(const FObjectIn
 
 }
 
-float USjmaxcKeDaXunFeiSoundBPLibrary::SjmaxcKeDaXunFeiSoundSampleFunction(float Param)
+void USjmaxcKeDaXunFeiSoundBPLibrary::SjmaxcBeginSpeachToText(const UObject* WorldContextObject, FSjmaxcBeginSpeachToTextDelegate SjmaxcBeginSpeachToTextDelegate, FSjmaxcSpeachToTextDelegate SjmaxcSpeachToTextDelegat)
 {
-	return -1;
+	if (!WorldContextObject)
+	{
+		return;
+	}
+	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(WorldContextObject);
+	USjmaxcKeDaXunFeiSocketSubsystem* SocketSystem = GameInstance->GetSubsystem<USjmaxcKeDaXunFeiSocketSubsystem>();
+
+	SocketSystem->SjmaxcBeginSpeachToText(SjmaxcBeginSpeachToTextDelegate, SjmaxcSpeachToTextDelegat);
+
 }
 
+void USjmaxcKeDaXunFeiSoundBPLibrary::SjmaxcStopSpeachToText(const UObject* WorldContextObject)
+{
+	if (!WorldContextObject)
+	{
+		return;
+	}
+	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(WorldContextObject);
+	USjmaxcKeDaXunFeiSocketSubsystem* SocketSystem = GameInstance->GetSubsystem<USjmaxcKeDaXunFeiSocketSubsystem>();
+	SocketSystem->SjmaxcStopSpeachToText();
+
+}

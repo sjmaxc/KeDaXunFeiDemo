@@ -2,6 +2,8 @@
 #include "Core/SjmaxcKeDaXunFeiSocketSubsystem.h"
 #include "Core/SjmaxcAudioCaptureSubsystem.h"
 
+
+
 FCriticalSection FConsumeSoundRunnable::CriticalSection;
 bool FConsumeSoundRunnable::Init()
 {
@@ -20,10 +22,13 @@ uint32 FConsumeSoundRunnable::Run()
 		}
 		Lock.Unlock();
 		FPlatformProcess::Sleep(0.04);
-		
+
+
+
+		FScopeLock DataLock(&USjmaxcAudioCaptureSubsystem::SjmaxcAudioCriticalSection);
 		if (USjmaxcAudioCaptureSubsystem::AudioData.Num()>1024)
 		{
-			FScopeLock DataLock(&USjmaxcAudioCaptureSubsystem::SjmaxcAudioCriticalSection);
+	
 			TArray<float> SendData;
 			SendData.Append(USjmaxcAudioCaptureSubsystem::AudioData.GetData(), 1024);
 			USjmaxcAudioCaptureSubsystem::AudioData.RemoveAt(0, 1024);
@@ -32,7 +37,10 @@ uint32 FConsumeSoundRunnable::Run()
 		}
 		
 	}
-	
+
+
+
+
 	return 0;
 }
 
@@ -43,7 +51,7 @@ void FConsumeSoundRunnable::Exit()
 
 void FConsumeSoundRunnable::Stop()
 {
-	UE_LOG(LogTemp, Display, TEXT("heelo[%s]stopsssssss"), *MyThreadName);
+	UE_LOG(LogTemp, Display, TEXT("FConsumeSoundRunnable[%s] begin to stop"), *MyThreadName);
 	FScopeLock Lock(&CriticalSection);
 	bRunning = false;
 

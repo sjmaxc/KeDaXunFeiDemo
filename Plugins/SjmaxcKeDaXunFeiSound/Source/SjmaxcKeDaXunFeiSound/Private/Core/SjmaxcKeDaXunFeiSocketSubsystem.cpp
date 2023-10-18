@@ -3,9 +3,12 @@
 
 #include "Core/SjmaxcKeDaXunFeiSocketSubsystem.h"
 #include "WebSocketsModule.h"
+#include "Core/SjmaxcAudioCaptureSubsystem.h"
 
 bool USjmaxcKeDaXunFeiSocketSubsystem::bSending = false;
 TSharedPtr<IWebSocket> USjmaxcKeDaXunFeiSocketSubsystem::Socket = {};
+
+USjmaxcAudioCaptureSubsystem* USjmaxcKeDaXunFeiSocketSubsystem::SjmaxcAudioCaptureSubsystem = nullptr;
 
 bool USjmaxcKeDaXunFeiSocketSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
@@ -14,8 +17,7 @@ bool USjmaxcKeDaXunFeiSocketSubsystem::ShouldCreateSubsystem(UObject* Outer) con
 
 void USjmaxcKeDaXunFeiSocketSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-	FConsumeSoundRunnable* Runnable1 = new FConsumeSoundRunnable(TEXT("Thread1"));
-	FRunnableThread* RunnableThread1 = FRunnableThread::Create(Runnable1, *Runnable1->MyThreadName);
+
 	
 }
 
@@ -36,6 +38,52 @@ bool USjmaxcKeDaXunFeiSocketSubsystem::IsTickable() const
 TStatId USjmaxcKeDaXunFeiSocketSubsystem::GetStatId() const
 {
 	RETURN_QUICK_DECLARE_CYCLE_STAT(USjmaxcKeDaXunFeiSocketSubsystem, STATGROUP_Tickables); 
+}
+
+void USjmaxcKeDaXunFeiSocketSubsystem::SjmaxcBeginSpeachToText(
+	FSjmaxcBeginSpeachToTextDelegate InSjmaxcBeginSpeachToTextDelegate,
+	FSjmaxcSpeachToTextDelegate InSjmaxcSpeachToTextDelegat)
+{
+	if (bSpeechToText)
+	{
+		return;
+	}
+	bSpeechToText = true;
+	SjmaxcBeginSpeachToTextDelegate = InSjmaxcBeginSpeachToTextDelegate;
+	SjmaxcSpeachToTextDelegate = InSjmaxcSpeachToTextDelegat;
+	
+	CreateSocket();
+}
+
+void USjmaxcKeDaXunFeiSocketSubsystem::SjmaxcStopSpeachToText()
+{
+	if (!bSpeechToText)
+	{
+		return;
+	}
+	bSpeechToText = false;
+	bSending = false;
+	SjmaxcBeginSpeachToTextDelegate.Clear();
+	SjmaxcSpeachToTextDelegate.Clear();
+
+	SjmaxcAudioCaptureSubsystem->StopCapturingAudio();
+	if (VoiceRunnable.IsValid())
+	{
+		VoiceRunnable->Stop();
+	}
+	EndSendVoiceData();
+}
+
+void USjmaxcKeDaXunFeiSocketSubsystem::EndSendVoiceData()
+{
+	if (Socket.IsValid() && Socket->IsConnected() && !bSending)
+	{
+		FString EndStr = TEXT("{\"end\": true}");
+
+		const char * CharValue = TCHAR_TO_UTF8(*EndStr);
+		int32 Length = strlen(CharValue);
+		Socket->Send(CharValue, Length, true);
+	}
 }
 
 void USjmaxcKeDaXunFeiSocketSubsystem::CreateSocket()
@@ -96,6 +144,10 @@ void USjmaxcKeDaXunFeiSocketSubsystem::CloseSocket()
 	{
 		Socket->Close();
 	}
+
+	bSpeechToText = false;
+	SjmaxcBeginSpeachToTextDelegate.Clear();
+	SjmaxcSpeachToTextDelegate.Clear();
 }
 
 void USjmaxcKeDaXunFeiSocketSubsystem::SendVoiceData(const float* InAudio, int32 NumSamples)
@@ -142,39 +194,89 @@ void USjmaxcKeDaXunFeiSocketSubsystem::OnConnected()
 void USjmaxcKeDaXunFeiSocketSubsystem::OnConnectionError(const FString& Error)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s Error:%s"), *FString(__FUNCTION__), *Error);
+
+	bSpeechToText = false;
+	SjmaxcBeginSpeachToTextDelegate.ExecuteIfBound(false);
+	SjmaxcBeginSpeachToTextDelegate.Clear();
+	SjmaxcSpeachToTextDelegate.Clear();
 }
 
 void USjmaxcKeDaXunFeiSocketSubsystem::OnClosed(int32 StatusCode, const FString& Reason, bool bWasClean)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s StatusCode:%d Reason:%s bWasClean:%d"),
 	*FString(__FUNCTION__), StatusCode, *Reason, bWasClean);
+
+	bSending = false;
+	bSpeechToText = false;
+	SjmaxcBeginSpeachToTextDelegate.Clear();
+	SjmaxcSpeachToTextDelegate.Clear();
+
+	SjmaxcAudioCaptureSubsystem->StopCapturingAudio();
+	if (VoiceRunnable.IsValid())
+	{
+		VoiceRunnable->Stop();
+	}
 }
 
 void USjmaxcKeDaXunFeiSocketSubsystem::OnMessage(const FString& Message)
 {
-	// UE_LOG(LogTemp, Warning, TEXT("%s Message:%s"), *FString(__FUNCTION__), *Message);
+	UE_LOG(LogTemp, Warning, TEXT("%s Message:%s"), *FString(__FUNCTION__), *Message);
 	if (!Message.IsEmpty())
 	{
 		TSharedPtr<FJsonObject> ResultObj;
 		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Message);
 		FJsonSerializer::Deserialize(Reader, ResultObj);
-		FString ssss;
-		if (ResultObj->TryGetStringField("data", ssss))
+
+		FString MessageAction;
+		
+		if (ResultObj->TryGetStringField("action", MessageAction))
 		{
-			if (!ssss.IsEmpty())
+			if (MessageAction.Equals(TEXT("started")))
 			{
-				TSharedPtr<FJsonObject> DataObj;
-				TSharedRef<TJsonReader<>> Reader2 = TJsonReaderFactory<>::Create(ssss);
-				FJsonSerializer::Deserialize(Reader2, DataObj);
+				bSending = true;
+				bSpeechToText = true;
 
-				FString dst;
-				FString src;
+				SjmaxcAudioCaptureSubsystem->StartCapturingAudio();
+				VoiceRunnable = MakeShareable(  new FConsumeSoundRunnable(TEXT("VoiceRunnable")));
+				FRunnableThread* RunnableThread1 = FRunnableThread::Create(VoiceRunnable.Get(), *VoiceRunnable->MyThreadName);
+			}
+			
+			if (MessageAction.Equals(TEXT("error")))
+			{
+				bSending = false;
+				bSpeechToText = false;
 
-				bool bDest = DataObj->TryGetStringField(TEXT("dst"), dst);
-				bool bSrc = DataObj->TryGetStringField(TEXT("src"), src);
-				if (bDest && bSrc)
+				SjmaxcBeginSpeachToTextDelegate.ExecuteIfBound(false);
+				SjmaxcBeginSpeachToTextDelegate.Clear();
+				SjmaxcSpeachToTextDelegate.Clear();
+			}
+			if (MessageAction.Equals(TEXT("result")))
+			{
+				FString OutText;
+				if (ResultObj->TryGetStringField("data", OutText))
 				{
-					UE_LOG(LogTemp, Warning, TEXT("dst :%s Message [src]:%s"), *dst, *src);
+					if (!OutText.IsEmpty())
+					{
+						TSharedPtr<FJsonObject> DataObj;
+						TSharedRef<TJsonReader<>> Reader2 = TJsonReaderFactory<>::Create(OutText);
+						FJsonSerializer::Deserialize(Reader2, DataObj);
+
+						FString dst;
+						FString src;
+						FString end;
+
+						bool bDest = DataObj->TryGetStringField(TEXT("dst"), dst);
+						bool bSrc = DataObj->TryGetStringField(TEXT("src"), src);
+						bool bEnd = DataObj->TryGetStringField(TEXT("ed"), end);
+						int32 EndNum = FCString::Atoi(*end);
+						bEnd = EndNum > 0 ? true : false;
+
+						if (bDest && bSrc&& bEnd)
+						{
+							UE_LOG(LogTemp, Warning, TEXT("dst :%s Message [src]:%s"), *dst, *src);
+							SjmaxcSpeachToTextDelegate.ExecuteIfBound(src,dst);
+						}
+					}
 				}
 			}
 		}

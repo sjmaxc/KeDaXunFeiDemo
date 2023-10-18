@@ -38,6 +38,15 @@ public class SjmaxcKeDaXunFeiSound : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"WebSockets",
+				"AudioMixer",
+				"SignalProcessing",
+				"Json",
+				"DeveloperSettings",
+				"JsonUtilities",
+				"AudioCapture",
+				"AudioCaptureEditor",
+				"AudioCaptureRtAudio"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

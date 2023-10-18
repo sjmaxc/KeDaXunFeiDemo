@@ -3,13 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/SynthComponent.h"
+#include "SjmaxcPlayVoiceComponent.generated.h"
 
-/**
- * 
- */
-class SJMAXCKEDAXUNFEISOUND_API SjmaxcPlayVoiceComponent
+UCLASS(ClassGroup = Synth, meta = (BlueprintSpawnableComponent))
+class SJMAXCKEDAXUNFEISOUND_API USjmaxcPlayVoiceComponent : public USynthComponent
 {
-public:
-	SjmaxcPlayVoiceComponent();
-	~SjmaxcPlayVoiceComponent();
+	GENERATED_BODY()
+
+	// Called to generate more audio
+	virtual int32 OnGenerateAudio(float* OutAudio, int32 NumSamples) override;
+
+	int32 SoundIndex = 0;
 };
